@@ -1,0 +1,88 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<dom-module id="web-nfc">
+  <script>
+    class WebNfc extends Polymer.Element {
+      static get is() {
+        return 'web-nfc';
+      }
+
+      static get properties() {
+        return {
+          supported: {
+            type: Boolean,
+            value: 'NDEFReader' in window && 'NDEFWriter' in window,
+            notify: true,
+            reflectToAttribute: true
+          },
+          input: {
+            type: Object,
+            notify: true
+          },
+          output: {
+            type: Object,
+            notify: true
+          },
+          /*
+          debug: {
+            type: Boolean,
+            value: false,
+            notify: true
+          }
+          */
+        };
+      }
+
+      ready() {
+        super.ready();
+        console.log('We are inside ready()');
+        this.read();
+      }
+
+      async read() {
+        console.log('We are inside read()');
+        console.log('this.supported', this.supported);
+        if (this.supported) {
+          const reader = new NDEFReader();
+          console.log('reader', reader);
+          console.log('reader.scan', reader.scan);
+          await reader.scan();
+          reader.onreading = event => {
+            console.log('event', event);
+            const message = event.message;
+            console.log('message', message);
+            const records = message.records;
+            console.log('records', records);
+            for (const record of records) {
+              console.log('record', record);
+              const data = record.data;
+              console.log('data', data);
+              const decoder = new TextDecoder();
+              const decodedData = decoder.decode(data);
+              console.log('decodedData', decodedData);
+              this.output = decodedData;
+              console.log('this.output', this.output);
+            }
+          }
+        }
+      }
+
+      write() {
+        console.log('We are inside write()');
+        console.log('this.supported', this.supported);
+        if (this.supported) {
+          const writer = new NDEFWriter();
+          console.log('writer', writer);
+          console.log('this.input', this.input);
+          writer.push(this.input).then(() => {
+            console.log('Message pushed');
+          }).catch((error) => {
+            console.error('Push failed', error);
+          });
+        }
+      }
+    }
+
+    window.customElements.define(WebNfc.is, WebNfc);
+  </script>
+</dom-module>
